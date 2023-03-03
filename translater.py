@@ -1,4 +1,5 @@
 import tkinter as tk
+import tkinter.font as tkFont
 import requests as rq
 import json
 
@@ -16,10 +17,15 @@ def http_post(text1, text2):
     data = {'text': content,
             'source_lang': source_lang,
             'target_lang': target_lang}
- 
-    response = rq.post(url, headers=headers, data=json.dumps(data))
-    print(response.status_code)
-    print(response.json())
+    print(data)
+    timeout = 5
+    try:
+        response = rq.post(url, headers=headers, data=json.dumps(data),timeout=timeout)
+        response.raise_for_status()
+    except rq.exceptions.RequestException:
+         response = rq.post(url, headers=headers, data=json.dumps(data),timeout=timeout)   
+         response.raise_for_status()
+         
     rspon_data = response.json() 
     if(rspon_data['code'] == 200):
         text2.delete("1.0", 'end')
@@ -34,8 +40,8 @@ def clear_text(text1, text2):
     text2.delete("1.0", "end")
 
 def change_translation(selected_option1, selected_option2):
-    print(selected_option1.get())
-    print(selected_option2.get())
+    # print(selected_option1.get())
+    # print(selected_option2.get())
     global source_lang
     global target_lang
     source_lang = selected_option2.get()
@@ -50,12 +56,20 @@ def change_source_lang(selection):
     global source_lang
     source_lang = selection
 def change_target_lang(selection):
-    global source_lang
+    global target_lang
     target_lang = selection
+
+def copy(text):
+    text.event_generate("<<Copy>>")
+
+def paste(text):
+    text.event_generate("<<Paste>>")
+def cut(text):
+    text.event_generate("<<Cut>>")    
 
 top_window = tk.Tk()
 top_window.title("text translate")
-top_window.geometry('840x420+20+20')
+top_window.geometry('840x520+20+20')
 top_window["background"] = "#C9C9C9"
 
 frame0 = tk.Frame(top_window)
@@ -81,11 +95,32 @@ selected_option1.set('EN')
 selected_option2 = tk.StringVar()
 selected_option2.set('ZH')
 option = ["EN", "ZH", "JP"]
+
 option_menu1 = tk.OptionMenu(frame1_top, selected_option1, *option, command=change_source_lang)
 option_menu2 = tk.OptionMenu(frame2_top, selected_option2, *option, command=change_target_lang)
 
+text_font = tkFont.Font(family="Microsoft YaHei", size=10, weight="bold")
+
+
+
 text1 = tk.Text(frame1, width=50, height=20)
 text2 = tk.Text(frame2, width=50, height=20)
+
+tk_menu1 = tk.Menu(frame1, tearoff=False)
+tk_menu1.add_command(label="复制", command=lambda:copy(text1))
+tk_menu1.add_command(label="粘贴", command=lambda:paste(text1))
+tk_menu1.add_command(label="剪切", command=lambda:cut(text1))
+
+tk_menu2 = tk.Menu(frame2, tearoff=False)
+tk_menu2.add_command(label="复制", command=lambda:copy(text2))
+tk_menu2.add_command(label="粘贴", command=lambda:paste(text2))
+tk_menu2.add_command(label="剪切", command=lambda:cut(text2))
+
+text1.bind("<Button-3>", lambda e: tk_menu1.post(e.x_root, e.y_root))
+text2.bind("<Button-3>", lambda e: tk_menu2.post(e.x_root, e.y_root))
+
+text1.configure(font=text_font)
+text2.configure(font=text_font)
 
 text1.pack(side="bottom")
 text2.pack(side="bottom")
